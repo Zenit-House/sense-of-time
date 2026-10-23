@@ -19,6 +19,7 @@ from pathlib import Path
 DATA_DIR = Path(os.environ.get("SOT_DIR", Path.home() / ".sense-of-time"))
 EVENTS = DATA_DIR / "events.jsonl"
 SESSION_GAP = timedelta(minutes=30)
+STRETCH_TIERS = (10, 6, 3)  # hours of continuous activity, each mentioned once
 RETENTION = timedelta(days=90)
 
 DAYPARTS = [(3, 5, "pre_dawn"), (5, 10, "morning"), (10, 15, "midday"),
@@ -83,21 +84,27 @@ def load_events(now):
 
 
 def compute(events, now, session_id, char_count):
+    tz = now.tzinfo
     prev = events[-1] if events else None
     gap = (now - prev["_ts"]) if prev else None
     b = bucket(gap)
 
-    # Session: trailing run with the same session_id and gaps under 30 min.
-    sess = []
-    cursor = now
-    for e in reversed(events):
-        if e["session_id"] != session_id or cursor - e["_ts"] >= SESSION_GAP:
-            break
-        sess.append(e)
-        cursor = e["_ts"]
-    sess.reverse()
+    def trailing(keep):
+        """Trailing run of events, newest first, with every gap under 30 min."""
+        run, cursor = [], now
+        for e in reversed(events):
+            if cursor - e["_ts"] >= SESSION_GAP or not keep(e):
+                break
+            run.append(e)
+            cursor = e["_ts"]
+        run.reverse()
+        return run
+
+    sess = trailing(lambda e: e["session_id"] == session_id)  # this chat
+    stretch = trailing(lambda e: True)  # any chat: "no break over 30 min"
     turns = len(sess) + 1
     duration = (now - sess[0]["_ts"]) if sess else timedelta(0)
+    stretch_dur = (now - stretch[0]["_ts"]) if stretch else timedelta(0)
     times = [e["_ts"] for e in sess] + [now]
     reply_gaps = [(times[i] - times[i - 1]).total_seconds() for i in range(1, len(times))]
     tempo = trend(reply_gaps, "slowing", "speeding")
@@ -107,8 +114,6 @@ def compute(events, now, session_id, char_count):
     dp = daypart(now.hour)
     weekday = now.strftime("%A")
     is_weekend = now.weekday() >= 5
-    fatigue = duration > timedelta(hours=2.5) and (dp == "late_night" or length_trend == "shrinking")
-    fatigue_said = any(e.get("fatigue") for e in sess)
 
     tone, depth = ["direct"] if (dp == "morning" and not is_weekend) else [], "normal"
     if dp == "late_night":
@@ -116,26 +121,48 @@ def compute(events, now, session_id, char_count):
     if turns > 30 and length_trend == "shrinking":
         depth = "light"
 
-    mention = None
-    new_day = prev is not None and prev["_ts"].astimezone(now.tzinfo).date() != now.date()
-    if b in ("days", "long") or (b == "hours" and new_day):
-        last = prev["_ts"].astimezone(now.tzinfo)
+    notes = []
+    # Absence: what kind of opener the gap since the previous message calls for.
+    if prev and b != "continuing":
+        last = prev["_ts"].astimezone(tz)
+        new_day = last.date() != now.date()
+        hrs = gap.total_seconds() / 3600
         where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new session"
-        mention = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
-                   f"{daypart(last.hour).replace('_', ' ')}; a one-sentence opener acknowledging the gap"
-                   f"{' and a short recap of where things left off' if b == 'long' else ''} is appropriate, once.")
-    elif fatigue and not fatigue_said:
-        mention = (f"This session has run {fmt_gap(duration)}"
-                   f"{' late at night' if dp == 'late_night' else ''}; "
-                   "one sentence offering to save progress is appropriate, once.")
+        back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
+                f"{daypart(last.hour).replace('_', ' ')}")
+        if new_day and hrs >= 6:
+            notes.append(back + ", on a new day; a greeting and a short recap of where things left off is appropriate.")
+        elif new_day and hrs >= 3:
+            notes.append(back + ", past midnight since; a greeting and a check whether they want to continue is appropriate.")
+        elif hrs >= 6:
+            notes.append(back + "; one sentence noting the gap and the current time is appropriate.")
+        elif hrs >= 1:
+            notes.append(back + "; a brief welcome back and readiness to continue is appropriate.")
+        else:
+            notes.append(back + "; a light greeting phrase is appropriate.")
+    # Stretch: continuous activity across chats, each tier mentioned once.
+    tier = next((t for t in STRETCH_TIERS if stretch_dur > timedelta(hours=t)), 0)
+    tier_said = max((e.get("tier", 0) for e in stretch), default=0)
+    if tier > tier_said:
+        notes.append(f"The user has been active for {fmt_gap(stretch_dur)} with no break over 30 min" + {
+            3: "; one sentence noting it has been over 3 hours and asking whether they want to continue is appropriate, once.",
+            6: "; a short recap of the progress so far and a reminder to rest is appropriate, once.",
+            10: "; another reminder to rest is appropriate, once."}[tier])
+    # Clock: first message in a sensitive window today.
+    today = [e["_ts"].astimezone(tz).hour for e in events if e["_ts"].astimezone(tz).date() == now.date()]
+    hhmm = now.strftime("%H:%M")
+    if not stretch and 4 <= now.hour < 6 and not today:
+        notes.append(f"The user is starting at {hhmm} with no activity since midnight; a greeting noting the very early hour is appropriate.")
+    if now.hour < 2 and not any(h < 2 for h in today):
+        notes.append(f"It is {hhmm}, the user's first message past midnight; a reminder that it is past midnight is appropriate, once.")
+    if 2 <= now.hour < 4 and not any(2 <= h < 4 for h in today):
+        notes.append(f"It is {hhmm}, the user's first message in the small hours; a reminder that morning is near is appropriate, once.")
 
-    parts = [f"It is {weekday} {now.strftime('%H:%M')} ({now.strftime('%z')[:3]}:{now.strftime('%z')[3:]}), {dp.replace('_', ' ')}."]
+    parts = [f"It is {weekday} {hhmm} ({now.strftime('%z')[:3]}:{now.strftime('%z')[3:]}), {dp.replace('_', ' ')}."]
     if b == "first":
         parts.append("No earlier activity is recorded.")
     elif b == "continuing":
         parts.append("The conversation is continuing; no opener is needed.")
-    else:
-        parts.append(f"The user's previous message was {fmt_gap(gap)} ago.")
     sess_txt = f"This session: turn {turns}, {fmt_gap(duration)}"
     if tempo != "unknown":
         sess_txt += f", tempo {tempo}"
@@ -143,10 +170,10 @@ def compute(events, now, session_id, char_count):
         sess_txt += f", messages {length_trend}"
     parts.append(sess_txt + ".")
     parts.append(f"Guidance: tone {', '.join(tone) or 'neutral'}, depth {depth}.")
-    parts.append(mention or "Time context shapes tone only and is not mentioned unless the user asks.")
+    parts.append(" ".join(notes) if notes else "Time context shapes tone only and is not mentioned unless the user asks.")
 
-    state = {"daypart": dp, "bucket": b, "turns": turns, "tempo": tempo,
-             "length_trend": length_trend, "fatigue": bool(fatigue), "should_mention": mention is not None}
+    state = {"daypart": dp, "bucket": b, "turns": turns, "tempo": tempo, "length_trend": length_trend,
+             "tier": tier, "notes": len(notes), "should_mention": bool(notes)}
     return state, "[sense-of-time] " + " ".join(parts)
 
 
@@ -159,7 +186,7 @@ def main():
     state, summary = compute(events, now, session_id, char_count)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     event = {"ts": now.isoformat(timespec="seconds"), "session_id": session_id,
-             "char_count": char_count, "fatigue": state["fatigue"]}
+             "char_count": char_count, "tier": state["tier"]}
     with EVENTS.open("a", encoding="utf-8") as f:
         f.write(json.dumps(event) + "\n")
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
@@ -169,45 +196,60 @@ def main():
 def selftest():
     tz = datetime.now().astimezone().tzinfo
     base = datetime(2026, 10, 23, 21, 34, tzinfo=tz)  # Friday evening
-    ev = lambda dt, sid="s1", n=100, fat=False: {"ts": dt.isoformat(), "_ts": dt, "session_id": sid, "char_count": n, "fatigue": fat}
+    at = lambda h, m=0, day=23: datetime(2026, 10, day, h, m, tzinfo=tz)
+    ev = lambda dt, sid="s1", n=100, tier=0: {"ts": dt.isoformat(), "_ts": dt, "session_id": sid, "char_count": n, "tier": tier}
 
     assert daypart(2) == "late_night" and daypart(3) == "pre_dawn" and daypart(21) == "evening"
     assert bucket(None) == "first" and bucket(timedelta(minutes=29)) == "continuing"
-    assert bucket(timedelta(hours=12)) == "days" and bucket(timedelta(days=7)) == "long"
     assert fmt_gap(timedelta(hours=12, minutes=38)) == "12h 38m"
 
     st, s = compute([], base, "s1", 10)
-    assert st["bucket"] == "first" and st["turns"] == 1 and "Friday" in s and "evening" in s
-
-    st, s = compute([ev(base - timedelta(minutes=5))], base, "s1", 10)
-    assert st["bucket"] == "continuing" and st["turns"] == 2 and "no opener" in s
-
+    assert st["bucket"] == "first" and st["turns"] == 1 and "Friday" in s and not st["should_mention"]
+    st, s = compute([ev(base - timedelta(minutes=20))], base, "s1", 10)
+    assert st["turns"] == 2 and "no opener" in s and not st["should_mention"]
     st, s = compute([ev(base - timedelta(minutes=5), sid="other")], base, "s1", 10)
     assert st["turns"] == 1, "different session_id must not join the session"
 
-    st, s = compute([ev(base - timedelta(days=9), sid="old")], base, "s1", 10)
-    assert st["bucket"] == "long" and st["should_mention"] and "recap" in s and "new session" in s
+    # Absence tiers, same day.
+    one = lambda gap, **kw: compute([ev(base - gap, **kw)], base, "s1", 10)
+    st, s = one(timedelta(minutes=40));  assert st["notes"] == 1 and "light greeting" in s and "resuming" in s
+    st, s = one(timedelta(hours=2));     assert "welcome back" in s
+    st, s = one(timedelta(hours=7));     assert "noting the gap and the current time" in s
+    st, s = one(timedelta(hours=2), sid="old"); assert "new session" in s
+    # Absence tiers across midnight (now 02:00 Saturday, also first message in the small hours).
+    two_am = at(2, day=24)
+    st, s = compute([ev(at(0, 30, day=24))], two_am, "s1", 10)
+    assert "welcome back" in s and "morning is near" in s and st["notes"] == 2
+    st, s = compute([ev(at(22))], two_am, "s1", 10)
+    assert "check whether they want to continue" in s and "morning is near" in s
+    st, s = compute([ev(at(19))], two_am, "s1", 10)
+    assert "new day" in s and "recap" in s
+    st, s = compute([ev(at(19), tier=0), ev(at(2, 10, day=24))], at(2, 30, day=24), "s1", 10)
+    assert "morning is near" not in s, "small-hours reminder fires once per night"
 
-    # Next day, same conversation -> opener, resuming; different session -> opener, new session.
-    st, s = compute([ev(base - timedelta(hours=14))], base, "s1", 10)
-    assert st["bucket"] == "days" and st["should_mention"] and "resuming" in s and "recap" not in s
-    st, s = compute([ev(base - timedelta(hours=14), sid="old")], base, "s1", 10)
-    assert st["should_mention"] and "new session" in s
-    # Short gap that crosses midnight -> opener; same-day 5h gap -> silent.
-    morning = datetime(2026, 10, 24, 7, 0, tzinfo=tz)
-    st, s = compute([ev(morning - timedelta(hours=8))], morning, "s1", 10)
-    assert st["bucket"] == "hours" and st["should_mention"] and "Friday late night" in s
-    st, s = compute([ev(base - timedelta(hours=5))], base, "s1", 10)
-    assert st["bucket"] == "hours" and not st["should_mention"]
+    # Stretch tiers: continuous activity across two chats, each tier once.
+    evs = [ev(base - timedelta(minutes=(10 - i) * 20), sid="a" if i < 5 else "s1") for i in range(10)]
+    st, s = compute(evs, base, "s1", 10)
+    assert st["tier"] == 3 and "over 3 hours" in s and st["turns"] == 6
+    for e in evs: e["tier"] = 3
+    st, s = compute(evs, base, "s1", 10)
+    assert st["tier"] == 3 and not st["should_mention"], "tier 3 must be mentioned once"
+    evs = [ev(base - timedelta(minutes=(20 - i) * 20), tier=3) for i in range(20)]
+    st, s = compute(evs, base, "s1", 10)
+    assert st["tier"] == 6 and "reminder to rest" in s and "recap" in s
+    evs = [ev(base - timedelta(minutes=(32 - i) * 20), tier=6) for i in range(32)]
+    st, s = compute(evs, base, "s1", 10)
+    assert st["tier"] == 10 and "another reminder to rest" in s
 
-    # Long late-night session with shrinking messages -> fatigue mention, once.
-    night = datetime(2026, 10, 23, 23, 50, tzinfo=tz)
-    evs = [ev(night - timedelta(minutes=(10 - i) * 20), n=300 if i < 5 else 50) for i in range(10)]
-    st, s = compute(evs, night, "s1", 40)
-    assert st["fatigue"] and st["should_mention"] and "save progress" in s
-    evs[-1]["fatigue"] = True
-    st, s = compute(evs, night, "s1", 40)
-    assert st["fatigue"] and not st["should_mention"], "fatigue mention must fire once per session"
+    # Clock: very early start, past midnight.
+    st, s = compute([ev(at(21))], at(5, day=24), "s1", 10)
+    assert "very early hour" in s and "new day" in s
+    st, s = compute([ev(at(0, 30, day=24))], at(5, day=24), "s1", 10)
+    assert "very early hour" not in s, "no early greeting after activity since midnight"
+    st, s = compute([ev(at(23, 50))], at(0, 5, day=24), "s1", 10)
+    assert st["notes"] == 1 and "past midnight" in s
+    st, s = compute([ev(at(23, 50)), ev(at(0, 5, day=24))], at(0, 20, day=24), "s1", 10)
+    assert not st["should_mention"], "midnight reminder fires once"
 
     # End to end through main() in a temp dir.
     global DATA_DIR, EVENTS

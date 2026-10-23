@@ -59,17 +59,37 @@ depth light. The user is resuming this conversation after 12h 38m, last active
 Friday morning; a one-sentence opener acknowledging the gap is appropriate, once.
 ```
 
-Rules in the test build:
+Rules in the test build. The hook states the situation; Claude writes the
+opener in its own words.
 
-| Situation | Behaviour |
+Gap since your previous message, in any chat:
+
+| Gap | Opener |
 | --- | --- |
-| Gap under 30 min | Silent, "continuing" |
-| Gap 30 min to 12 h, same day | Silent |
-| Gap that crosses midnight, or 12 h to 7 days | One-sentence opener |
-| Gap over 7 days | Opener plus a short recap |
-| Late night (22:00 to 03:00) | Tone concise, depth light, nothing said |
-| Session over 2.5 h and (late night or messages shrinking) | One sentence offering to save progress, once per session |
+| under 30 min | none, "continuing" |
+| 30 min to 1 h | a light greeting phrase |
+| 1 to 6 h | brief welcome back, ready to continue |
+| 3 to 6 h, past midnight since | greeting, and a check whether you want to continue |
+| 6 h or more, same day | one sentence noting the gap and the current time |
+| 6 h or more, on a new day | greeting and a short recap of where things left off |
 
+Continuous activity, across chats, with no break over 30 min (each once):
+
+| Active for | Message |
+| --- | --- |
+| over 3 h | it has been 3 hours, still want to continue? |
+| over 6 h | short recap of the day's progress and a reminder to rest |
+| over 10 h | another reminder to rest |
+
+Clock, first message in the window that day:
+
+| Time | Message |
+| --- | --- |
+| start between 04:00 and 06:00, nothing since midnight | greeting noting the very early hour |
+| 00:00 to 02:00 | reminder that it is past midnight |
+| 02:00 to 04:00 | reminder that morning is near |
+
+Late night (22:00 to 03:00) also sets tone concise and depth light.
 Thresholds live at the top of `sot_hook.py`.
 
 ## What is stored
@@ -77,7 +97,7 @@ Thresholds live at the top of `sot_hook.py`.
 One JSON line per prompt in `~/.sense-of-time/events.jsonl`:
 
 ```json
-{"ts": "2026-10-23T22:29:32+07:00", "session_id": "e936...", "char_count": 38, "fatigue": false}
+{"ts": "2026-10-23T22:29:32+07:00", "session_id": "e936...", "char_count": 38, "tier": 0}
 ```
 
 No prompt text, ever. Events older than 90 days are ignored. Delete the file to
