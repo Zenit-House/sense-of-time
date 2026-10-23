@@ -70,8 +70,8 @@ Gap since your previous message, in any chat:
 | 30 min to 1 h | a light greeting phrase |
 | 1 to 6 h | brief welcome back, ready to continue |
 | 3 to 6 h, past midnight since | greeting, and a check whether you want to continue |
-| 6 h or more, same day | one sentence noting the gap and the current time |
-| 6 h or more, on a new day | greeting and a short recap of where things left off |
+| 6 h or more, same day | one sentence bridging then to now: how long and how many messages the earlier block ran, what time it is now, where things left off; no greeting ceremony |
+| 6 h or more, on a new day | greeting and a short recap of where things left off, with the earlier block's length as a pointer |
 
 Continuous activity, across chats, with no break over 30 min (each once):
 

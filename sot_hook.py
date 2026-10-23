@@ -130,12 +130,21 @@ def compute(events, now, session_id, char_count):
         where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new session"
         back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
                 f"{daypart(last.hour).replace('_', ' ')}")
+        # The block of work they left: trailing run ending at prev.
+        block, cursor = [prev], prev["_ts"]
+        for e in reversed(events[:-1]):
+            if cursor - e["_ts"] >= SESSION_GAP:
+                break
+            block.append(e)
+            cursor = e["_ts"]
+        block_txt = f"that block ran {fmt_gap(prev['_ts'] - cursor)} over {len(block)} messages"
         if new_day and hrs >= 6:
-            notes.append(back + ", on a new day; a greeting and a short recap of where things left off is appropriate.")
+            notes.append(f"{back} ({block_txt}), on a new day; a greeting and a short recap of where things left off is appropriate.")
         elif new_day and hrs >= 3:
             notes.append(back + ", past midnight since; a greeting and a check whether they want to continue is appropriate.")
         elif hrs >= 6:
-            notes.append(back + "; one sentence noting the gap and the current time is appropriate.")
+            notes.append(f"{back} ({block_txt}); it is now {dp.replace('_', ' ')}. One sentence bridging then to now "
+                         "and pointing at where things left off is appropriate, with no greeting ceremony.")
         elif hrs >= 1:
             notes.append(back + "; a brief welcome back and readiness to continue is appropriate.")
         else:
@@ -214,7 +223,12 @@ def selftest():
     one = lambda gap, **kw: compute([ev(base - gap, **kw)], base, "s1", 10)
     st, s = one(timedelta(minutes=40));  assert st["notes"] == 1 and "light greeting" in s and "resuming" in s
     st, s = one(timedelta(hours=2));     assert "welcome back" in s
-    st, s = one(timedelta(hours=7));     assert "noting the gap and the current time" in s
+    st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "over 1 messages" in s
+    morning_block = [ev(at(9)), ev(at(9, 20)), ev(at(9, 45)), ev(at(11))]  # 11:00 starts a new block
+    st, s = compute(morning_block, base, "s1", 10)
+    assert "that block ran 0m over 1 messages" in s and "now evening" in s
+    st, s = compute(morning_block[:3], base, "s1", 10)
+    assert "that block ran 45m over 3 messages" in s
     st, s = one(timedelta(hours=2), sid="old"); assert "new session" in s
     # Absence tiers across midnight (now 02:00 Saturday, also first message in the small hours).
     two_am = at(2, day=24)
