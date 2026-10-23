@@ -179,7 +179,8 @@ def compute(events, now, session_id, char_count):
         sess_txt += f", messages {length_trend}"
     parts.append(sess_txt + ".")
     parts.append(f"Guidance: tone {', '.join(tone) or 'neutral'}, depth {depth}.")
-    parts.append(" ".join(notes) if notes else "Time context shapes tone only and is not mentioned unless the user asks.")
+    parts.append(" ".join(notes) + " It belongs in the first sentence of the reply, before the answer, never at the end."
+                 if notes else "Time context shapes tone only and is not mentioned unless the user asks.")
 
     state = {"daypart": dp, "bucket": b, "turns": turns, "tempo": tempo, "length_trend": length_trend,
              "tier": tier, "notes": len(notes), "should_mention": bool(notes)}
@@ -222,6 +223,7 @@ def selftest():
     # Absence tiers, same day.
     one = lambda gap, **kw: compute([ev(base - gap, **kw)], base, "s1", 10)
     st, s = one(timedelta(minutes=40));  assert st["notes"] == 1 and "light greeting" in s and "resuming" in s
+    assert "first sentence of the reply" in s
     st, s = one(timedelta(hours=2));     assert "welcome back" in s
     st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "over 1 messages" in s
     morning_block = [ev(at(9)), ev(at(9, 20)), ev(at(9, 45)), ev(at(11))]  # 11:00 starts a new block
