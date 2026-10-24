@@ -42,7 +42,7 @@
     (() => {
       const tl = gsap.timeline({ paused: true });
       const panels = ["#s3-p1", "#s3-p2", "#s3-p3"];
-      const at = [0.1, 2.6, 4.6]; // one card per VO phrase
+      const at = [0.3, 2.9, 5.0]; // one card per VO phrase
       gsap.set(panels, { opacity: 0 });
       gsap.set(["#s3-l1 .w", "#s3-l2 .w"], { opacity: 0 });
 
@@ -55,10 +55,10 @@
       });
 
       // "The rest of the time, silence": cards recede into depth, the line lands.
-      tl.to(panels, { opacity: 0, z: -600, filter: "blur(12px)", duration: 0.5, ease: "power2.in", stagger: 0.05 }, 7.0);
-      tl.fromTo("#s3-l1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 7.3);
-      tl.fromTo("#s3-l2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.06 }, 7.8);
-      tl.to("#s3-dip", { opacity: 0.4, duration: 0.1, ease: "none" }, 9.28);
+      tl.to(panels, { opacity: 0, z: -600, filter: "blur(12px)", duration: 0.5, ease: "power2.in", stagger: 0.05 }, 8.2);
+      tl.fromTo("#s3-l1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 8.5);
+      tl.fromTo("#s3-l2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.06 }, 9.0);
+      tl.to("#s3-dip", { opacity: 0.4, duration: 0.1, ease: "none" }, 11.08);
 
       window.__timelines["s3"] = tl;
     })();

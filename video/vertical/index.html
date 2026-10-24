@@ -46,7 +46,7 @@
     </style>
   </head>
   <body>
-    <div data-hf-id="hf-7i0e" id="root" data-composition-id="main" data-start="0" data-duration="31.4" data-width="1080" data-height="1920">
+    <div data-hf-id="hf-7i0e" id="root" data-composition-id="main" data-start="0" data-duration="38.4" data-width="1080" data-height="1920">
       <div data-hf-id="hf-46fi" id="bg-a"></div>
       <div data-hf-id="hf-y0pp" id="bg-b"></div>
       <div data-hf-id="hf-5tue" id="tint"></div>
@@ -58,29 +58,39 @@
       <div data-hf-id="hf-rscb" id="sph3" class="sphere"></div>
 
       <div data-hf-id="hf-j971" id="s1" class="clip" data-composition-id="s1" data-composition-src="compositions/s1.html"
-        data-start="0" data-duration="9" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+        data-start="0" data-duration="9.2" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
       <div data-hf-id="hf-076c" id="s2" class="clip" data-composition-id="s2" data-composition-src="compositions/s2.html"
-        data-start="9" data-duration="8" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+        data-start="9.2" data-duration="10.6" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
       <div data-hf-id="hf-aprt" id="s3" class="clip" data-composition-id="s3" data-composition-src="compositions/s3.html"
-        data-start="17" data-duration="9.4" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+        data-start="19.8" data-duration="11.2" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
       <div data-hf-id="hf-8mic" id="s4" class="clip" data-composition-id="s4" data-composition-src="compositions/s4.html"
-        data-start="26.4" data-duration="5" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+        data-start="31" data-duration="7.4" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+
+      <audio id="vo1" class="clip" src="assets/audio/vo1.mp3" data-duration="8.2" data-start="0.4" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo2" class="clip" src="assets/audio/vo2.mp3" data-duration="10" data-start="9.5" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo3" class="clip" src="assets/audio/vo3.mp3" data-duration="10.72" data-start="20" data-track-index="3" data-volume="1"></audio>
+      <audio id="vo4" class="clip" src="assets/audio/vo4.mp3" data-duration="6.8" data-start="31.2" data-track-index="3" data-volume="1"></audio>
+
+      <audio id="bed" class="clip" src="assets/audio/music.mp3" data-start="0" data-duration="38.4" data-track-index="4" data-volume="0.14" data-fade-in="0.6" data-fade-out="1.6"></audio>
+      <audio id="sfx-whoosh1" class="clip" src="assets/audio/whoosh.mp3" data-duration="0.8" data-start="8.95" data-track-index="5" data-volume="0.7"></audio>
+      <audio id="sfx-whoosh2" class="clip" src="assets/audio/whoosh.mp3" data-duration="0.72" data-start="19.55" data-track-index="5" data-volume="0.7" data-playback-rate="1.12"></audio>
+      <audio id="sfx-pop" class="clip" src="assets/audio/pop.mp3" data-duration="0.48" data-start="14.43" data-track-index="5" data-volume="0.8"></audio>
     </div>
     <script>
       const tl = gsap.timeline({ paused: true });
       // Depth-of-field blobs and glass spheres drift slowly for the whole film (3-5 px/s).
-      tl.fromTo("#blob1", { x: 0, y: 0 }, { x: 90, y: -60, duration: 31, ease: "none" }, 0);
-      tl.fromTo("#blob2", { x: 0, y: 0 }, { x: -120, y: 80, duration: 31, ease: "none" }, 0);
-      tl.fromTo("#blob3", { x: 0, y: 0 }, { x: 60, y: -110, duration: 31, ease: "none" }, 0);
-      tl.fromTo("#sph1", { x: 0, y: 0 }, { x: 40, y: -140, duration: 31, ease: "none" }, 0);
-      tl.fromTo("#sph2", { x: 0, y: 0 }, { x: -70, y: 120, duration: 31, ease: "none" }, 0);
-      tl.fromTo("#sph3", { x: 0, y: 0 }, { x: -30, y: -90, duration: 31, ease: "none" }, 0);
+      tl.fromTo("#blob1", { x: 0, y: 0 }, { x: 90, y: -60, duration: 38.4, ease: "none" }, 0);
+      tl.fromTo("#blob2", { x: 0, y: 0 }, { x: -120, y: 80, duration: 38.4, ease: "none" }, 0);
+      tl.fromTo("#blob3", { x: 0, y: 0 }, { x: 60, y: -110, duration: 38.4, ease: "none" }, 0);
+      tl.fromTo("#sph1", { x: 0, y: 0 }, { x: 40, y: -140, duration: 38.4, ease: "none" }, 0);
+      tl.fromTo("#sph2", { x: 0, y: 0 }, { x: -70, y: 120, duration: 38.4, ease: "none" }, 0);
+      tl.fromTo("#sph3", { x: 0, y: 0 }, { x: -30, y: -90, duration: 38.4, ease: "none" }, 0);
       // Colour shifts between beats: deeper for the "why", back for the "what you get", ink for the end card.
-      tl.to("#tint", { opacity: 0.22, duration: 0.5, ease: "power2.inOut" }, 9);
-      tl.to("#tint", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 17);
-      tl.to("#bg-b", { opacity: 1, duration: 0.6, ease: "power2.inOut" }, 26.1);
-      tl.to(".blob", { opacity: 0.08, duration: 0.6, ease: "power2.inOut" }, 26.1);
-      tl.to(".sphere", { opacity: 0.45, duration: 0.6, ease: "power2.inOut" }, 26.1);
+      tl.to("#tint", { opacity: 0.22, duration: 0.5, ease: "power2.inOut" }, 9.2);
+      tl.to("#tint", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 19.8);
+      tl.to("#bg-b", { opacity: 1, duration: 0.6, ease: "power2.inOut" }, 30.7);
+      tl.to(".blob", { opacity: 0.08, duration: 0.6, ease: "power2.inOut" }, 30.7);
+      tl.to(".sphere", { opacity: 0.45, duration: 0.6, ease: "power2.inOut" }, 30.7);
       window.__timelines["main"] = tl;
       tl.seek(0);
     </script>

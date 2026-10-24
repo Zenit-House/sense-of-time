@@ -50,19 +50,19 @@
       });
 
       // "Old context should fade": the two farthest soften and sink.
-      tl.to(["#s2-c4", "#s2-c5"], { y: "+=60", opacity: 0.3, filter: "blur(8px)", duration: 0.5, ease: "power2.inOut", stagger: 0.06 }, 2.6);
+      tl.to(["#s2-c4", "#s2-c5"], { y: "+=60", opacity: 0.3, filter: "blur(8px)", duration: 0.5, ease: "power2.inOut", stagger: 0.06 }, 2.9);
 
       // "Unless it mattered": the third card flies to the front, badge pops.
-      tl.to("#s2-c3", { x: 0, y: -40, z: 200, rotationY: -8, rotationX: 8, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 4.0);
-      tl.to(["#s2-c1", "#s2-c2"], { opacity: 0.4, filter: "blur(4px)", duration: 0.5, ease: "power2.inOut" }, 4.0);
-      tl.fromTo("#s2-badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, 4.35);
+      tl.to("#s2-c3", { x: 0, y: -40, z: 200, rotationY: -8, rotationX: 8, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 4.8);
+      tl.to(["#s2-c1", "#s2-c2"], { opacity: 0.4, filter: "blur(4px)", duration: 0.5, ease: "power2.inOut" }, 4.8);
+      tl.fromTo("#s2-badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, 5.2);
 
-      tl.to("#s2-t1 .w", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in", stagger: 0.04 }, 5.4);
-      tl.fromTo("#s2-t2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 5.75);
+      tl.to("#s2-t1 .w", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in", stagger: 0.04 }, 6.6);
+      tl.fromTo("#s2-t2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 6.95);
 
       // Hand-off: the hero card grows past the frame.
-      tl.to(["#s2-c1", "#s2-c2", "#s2-c4", "#s2-c5", "#s2-t2", "#s2-badge"], { opacity: 0, filter: "blur(14px)", duration: 0.3, ease: "power2.in" }, 7.3);
-      tl.to("#s2-c3", { scale: 6, z: 300, rotationX: 0, rotationY: 0, filter: "blur(14px)", opacity: 0, duration: 0.65, ease: "power3.in" }, 7.3);
+      tl.to(["#s2-c1", "#s2-c2", "#s2-c4", "#s2-c5", "#s2-t2", "#s2-badge"], { opacity: 0, filter: "blur(14px)", duration: 0.3, ease: "power2.in" }, 9.9);
+      tl.to("#s2-c3", { scale: 6, z: 300, rotationX: 0, rotationY: 0, filter: "blur(14px)", opacity: 0, duration: 0.65, ease: "power3.in" }, 9.9);
 
       window.__timelines["s2"] = tl;
     })();
