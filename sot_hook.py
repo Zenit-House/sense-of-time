@@ -20,6 +20,7 @@ DATA_DIR = Path(os.environ.get("SOT_DIR", Path.home() / ".sense-of-time"))
 EVENTS = DATA_DIR / "events.jsonl"
 SESSION_GAP = timedelta(minutes=30)
 STRETCH_TIERS = (10, 6, 3)  # hours of continuous activity, each mentioned once
+DAY_SHIFT = timedelta(hours=4)
 RETENTION = timedelta(days=90)
 
 DAYPARTS = [(3, 5, "pre_dawn"), (5, 10, "morning"), (10, 15, "midday"),
@@ -125,7 +126,8 @@ def compute(events, now, session_id, char_count):
     # Absence: what kind of opener the gap since the previous message calls for.
     if prev and b != "continuing":
         last = prev["_ts"].astimezone(tz)
-        new_day = last.date() != now.date()
+        # A human day turns over at 04:00: 01:00 belongs to the evening before.
+        new_day = last.date() != now.date() or (last - DAY_SHIFT).date() != (now - DAY_SHIFT).date()
         hrs = gap.total_seconds() / 3600
         where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new session"
         back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
@@ -239,6 +241,9 @@ def selftest():
     st, s = compute([ev(at(22))], two_am, "s1", 10)
     assert "check whether they want to continue" in s and "morning is near" in s
     st, s = compute([ev(at(19))], two_am, "s1", 10)
+    assert "new day" in s and "recap" in s
+    # 01:09 then 12:42 the same calendar day: slept in between, so a new day.
+    st, s = compute([ev(at(1, 9, day=24))], at(12, 42, day=24), "s1", 10)
     assert "new day" in s and "recap" in s
     st, s = compute([ev(at(19), tier=0), ev(at(2, 10, day=24))], at(2, 30, day=24), "s1", 10)
     assert "morning is near" not in s, "small-hours reminder fires once per night"
