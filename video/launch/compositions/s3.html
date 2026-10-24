@@ -1,0 +1,141 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      --ground: #f3f1ec;
+      --ink: #15140f;
+      --accent: #e8491d;
+      background: var(--ground);
+      font-family: Inter, sans-serif;
+      overflow: hidden;
+    }
+    .s3-panel {
+      position: absolute;
+      left: 760px;
+      width: 1000px;
+    }
+    #s3-p1 { top: 130px; }
+    #s3-p2 { top: 430px; }
+    #s3-p3 { top: 730px; }
+    .s3-label {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 44px;
+      color: var(--accent);
+      margin-bottom: 26px;
+    }
+    .s3-bubble {
+      display: inline-block;
+      max-width: 900px;
+      padding: 44px 54px;
+      border-radius: 10px 36px 36px 36px;
+      background: var(--ink);
+      color: var(--ground);
+      font-size: 56px;
+      font-weight: 500;
+      line-height: 1.3;
+      box-shadow: 0 6px 18px rgba(21, 20, 15, 0.1);
+    }
+    .s3-bubble .recap {
+      color: #f6a58c;
+    }
+    #s3-ghost {
+      position: absolute;
+      left: 0;
+      top: 76px;
+      width: 860px;
+      height: 200px;
+      border: 2px dashed var(--ink);
+      border-radius: 10px 36px 36px 36px;
+      opacity: 0.22;
+    }
+    #s3-p2 .s3-bubble {
+      position: relative;
+    }
+    #s3-line {
+      position: absolute;
+      left: 160px;
+      top: 400px;
+      width: 1600px;
+      text-align: center;
+      color: var(--ink);
+    }
+    #s3-l1 {
+      font-family: Outfit, sans-serif;
+      font-weight: 700;
+      font-size: 96px;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    #s3-l1 .w, #s3-l2 .w {
+      display: inline-block;
+      margin-right: 0.25em;
+    }
+    #s3-l2 {
+      margin-top: 28px;
+      font-size: 48px;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+    #s3-dip {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  <div data-hf-id="hf-3xc5" id="root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-bkxh" id="s3-p1" class="s3-panel" data-layout-allow-overlap>
+      <div data-hf-id="hf-yjhl" class="s3-label">7 days later</div>
+      <div data-hf-id="hf-elbt" class="s3-bubble"><span data-hf-id="hf-3iq0" class="recap">Last time: the pricing table.</span></div>
+    </div>
+    <div data-hf-id="hf-fj1i" id="s3-p2" class="s3-panel" data-layout-allow-overlap>
+      <div data-hf-id="hf-grx2" class="s3-label">00:14</div>
+      <div data-hf-id="hf-q6g5" id="s3-ghost"></div>
+      <div data-hf-id="hf-6sye" class="s3-bubble">Done. Two lines changed.</div>
+    </div>
+    <div data-hf-id="hf-lorb" id="s3-p3" class="s3-panel" data-layout-allow-overlap>
+      <div data-hf-id="hf-2qu6" class="s3-label">3 h straight</div>
+      <div data-hf-id="hf-nfrw" class="s3-bubble">Still going?</div>
+    </div>
+    <div data-hf-id="hf-99hi" id="s3-line">
+      <div data-hf-id="hf-650d" id="s3-l1"><span data-hf-id="hf-yir5" class="w">Time</span><span data-hf-id="hf-1xp6" class="w">shapes</span><span data-hf-id="hf-2yfi" class="w">how</span><span data-hf-id="hf-cqxh" class="w">it</span><span data-hf-id="hf-5ozr" class="w">answers.</span></div>
+      <div data-hf-id="hf-a34e" id="s3-l2"><span data-hf-id="hf-zpg9" class="w">Not</span><span data-hf-id="hf-8yca" class="w">what</span><span data-hf-id="hf-42vd" class="w">it</span><span data-hf-id="hf-b4kv" class="w">talks</span><span data-hf-id="hf-4h7d" class="w">about.</span></div>
+    </div>
+    <div data-hf-id="hf-jzy7" id="s3-dip"></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const panels = ["#s3-p1", "#s3-p2", "#s3-p3"];
+      const at = [0.1, 2.6, 4.6]; // one panel per VO phrase
+
+      gsap.set(panels, { opacity: 0, x: 600, filter: "blur(12px)", transformOrigin: "left top" });
+      gsap.set(["#s3-l1 .w", "#s3-l2 .w"], { opacity: 0 });
+
+      panels.forEach((p, i) => {
+        // Whip in from the right.
+        tl.fromTo(p, { opacity: 0, x: 600, filter: "blur(12px)" },
+          { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.25, ease: "expo.out" }, at[i]);
+        // Every earlier panel dims in place, like read messages in a feed.
+        for (let j = 0; j < i; j++) {
+          tl.to(panels[j], { opacity: 0.35, duration: 0.4, ease: "power2.inOut" }, at[i] - 0.05);
+        }
+      });
+
+      // "The rest of the time, silence": panels leave, the line lands.
+      tl.to(panels, { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 7.0);
+      tl.fromTo("#s3-l1 .w", { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 7.2);
+      tl.fromTo("#s3-l2 .w", { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.06 }, 7.65);
+
+      // Dip cut into the end card.
+      tl.to("#s3-dip", { opacity: 0.4, duration: 0.1, ease: "none" }, 9.68);
+
+      window.__timelines["s3"] = tl;
+    })();
+  </script>
+</template>

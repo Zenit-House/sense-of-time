@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+video/launch/.hyperframes/
+video/launch/node_modules/

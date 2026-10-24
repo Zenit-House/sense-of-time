@@ -1,0 +1,171 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      --ground: #f3f1ec;
+      --ink: #15140f;
+      --accent: #e8491d;
+      font-family: Inter, sans-serif;
+      overflow: hidden;
+    }
+    #s1-ground {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+    }
+    #s1-clock {
+      position: absolute;
+      left: 140px;
+      top: 240px;
+      width: 700px;
+      height: 480px;
+      border-radius: 48px;
+      background: var(--ink);
+      color: var(--ground);
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 150px;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+    }
+    #s1-colon {
+      display: inline-block;
+      width: 0.55em;
+      text-align: center;
+    }
+    .s1-bubble {
+      position: absolute;
+      left: 940px;
+      width: 880px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .s1-bubble span {
+      display: inline-block;
+      max-width: 860px;
+      padding: 40px 54px;
+      border-radius: 36px 36px 10px 36px;
+      background: #ffffff;
+      border: 1px solid #dad7cf;
+      box-shadow: 0 6px 18px rgba(21, 20, 15, 0.1);
+      color: var(--ink);
+      font-size: 54px;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+    #s1-a {
+      top: 200px;
+    }
+    #s1-b {
+      top: 560px;
+    }
+    #s1-gap {
+      position: absolute;
+      left: 1000px;
+      width: 820px;
+      top: 406px;
+      display: flex;
+      justify-content: center;
+    }
+    #s1-gap-pill {
+      position: relative;
+      height: 76px;
+      padding: 0 32px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--ground);
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 36px;
+      line-height: 76px;
+      overflow: hidden;
+      min-width: 260px;
+      text-align: center;
+    }
+    #s1-gap-pill span {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+    }
+    #s1-line {
+      position: absolute;
+      left: 140px;
+      top: 820px;
+      width: 1640px;
+      font-family: Outfit, sans-serif;
+      font-weight: 700;
+      font-size: 84px;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+    #s1-line .w {
+      display: inline-block;
+      margin-right: 0.25em;
+    }
+  </style>
+  <div data-hf-id="hf-3pu3" id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-pm5n" id="s1-ground"></div>
+    <div data-hf-id="hf-07fc" id="s1-clock"><span data-hf-id="hf-e5uv" id="s1-hm">13:41</span><span data-hf-id="hf-fzpi" id="s1-colon">:</span><span data-hf-id="hf-3byr" id="s1-sec">07</span></div>
+    <div data-hf-id="hf-br4b" id="s1-a" class="s1-bubble"><span data-hf-id="hf-85fa">Draft the launch plan for me.</span></div>
+    <div data-hf-id="hf-05s3" id="s1-gap" data-layout-allow-overflow>
+      <div data-hf-id="hf-g6g6" id="s1-gap-pill"><span data-hf-id="hf-jxpa" id="s1-gap-1">1 second</span><span data-hf-id="hf-27zd" id="s1-gap-2">1 month</span></div>
+    </div>
+    <div data-hf-id="hf-338g" id="s1-b" class="s1-bubble"><span data-hf-id="hf-kw9s">Ok, continue.</span></div>
+    <div data-hf-id="hf-hzxo" id="s1-line">
+      <span data-hf-id="hf-3375" class="w">To</span><span data-hf-id="hf-vfsf" class="w">an</span><span data-hf-id="hf-ntpt" class="w">LLM,</span><span data-hf-id="hf-zsl3" class="w">both</span><span data-hf-id="hf-i2aj" class="w">look</span><span data-hf-id="hf-9o0j" class="w">the</span><span data-hf-id="hf-zb5k" class="w">same.</span>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const secEl = document.getElementById("s1-sec");
+      const colon = document.getElementById("s1-colon");
+      const clock = { t: 0 };
+      // The clock is a pure function of timeline time: seconds tick, the colon blinks.
+      tl.to(clock, {
+        t: 9, duration: 9, ease: "none",
+        onUpdate: () => {
+          secEl.textContent = String(7 + Math.floor(clock.t)).padStart(2, "0");
+          colon.style.opacity = clock.t % 1 < 0.5 ? 1 : 0.25;
+        },
+      }, 0);
+
+      // Clock tile is on screen from frame 0 (the thumbnail), settles, then shrinks to the corner.
+      gsap.set("#s1-gap-2", { yPercent: 100, opacity: 0 });
+      tl.fromTo("#s1-clock", { scale: 0.96, transformOrigin: "left top" },
+        { scale: 1, duration: 0.45, ease: "expo.out" }, 0);
+      tl.to("#s1-clock", { x: -60, y: -180, scale: 0.28, duration: 0.6, ease: "power2.inOut" }, 2.4);
+
+      // Two messages with the gap between them.
+      tl.fromTo("#s1-a span", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 2.6);
+      tl.fromTo("#s1-gap-pill", { opacity: 0, scale: 0.6, transformOrigin: "center" },
+        { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }, 3.2);
+      tl.fromTo("#s1-b span", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 3.6);
+
+      // "1 second" rolls to "1 month" like a slot.
+      tl.fromTo("#s1-gap-1", { yPercent: 0, opacity: 1 }, { yPercent: -100, opacity: 0, duration: 0.3, ease: "power3.inOut" }, 4.9);
+      tl.fromTo("#s1-gap-2", { yPercent: 100, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.3, ease: "power3.inOut" }, 4.9);
+
+      // Hero move: the gap collapses to nothing.
+      tl.to("#s1-b", { y: -190, duration: 0.6, ease: "power3.in" }, 6.0);
+      tl.to("#s1-gap-pill", { scaleY: 0, opacity: 0, transformOrigin: "center", duration: 0.5, ease: "power3.in" }, 6.0);
+
+      // The line lands word by word, then stays dead still.
+      tl.fromTo("#s1-line .w", { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 6.9);
+
+      // Hand-off: bubbles and clock leave, the ground floods to ink while the line stays.
+      tl.to(["#s1-a span", "#s1-b span", "#s1-clock"], { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 8.2);
+      tl.to("#s1-ground", { backgroundColor: "#15140f", duration: 0.4, ease: "power2.inOut" }, 8.55);
+      tl.to("#s1-line", { color: "#f3f1ec", duration: 0.4, ease: "power2.inOut" }, 8.55);
+
+      window.__timelines["s1"] = tl;
+    })();
+  </script>
+</template>

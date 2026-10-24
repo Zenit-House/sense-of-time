@@ -1,0 +1,128 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      --ground: #f3f1ec;
+      --ink: #15140f;
+      --accent: #e8491d;
+      background: var(--ink);
+      font-family: Inter, sans-serif;
+      overflow: hidden;
+    }
+    .s2-title {
+      position: absolute;
+      left: 160px;
+      top: 150px;
+      width: 1600px;
+      font-family: Outfit, sans-serif;
+      font-weight: 700;
+      font-size: 96px;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--ground);
+    }
+    .s2-title .w {
+      display: inline-block;
+      margin-right: 0.25em;
+    }
+    .s2-title .x {
+      color: var(--accent);
+    }
+    .s2-card {
+      position: absolute;
+      top: 520px;
+      width: 320px;
+      height: 240px;
+      border-radius: 24px;
+      background: var(--ground);
+      padding: 28px;
+    }
+    .s2-card .d {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--ink);
+      opacity: 0.6;
+      margin-bottom: 26px;
+      white-space: nowrap;
+    }
+    .s2-card .bar {
+      height: 18px;
+      border-radius: 9px;
+      background: #d5d2ca;
+      margin-bottom: 16px;
+    }
+    #s2-c1 { left: 160px; }
+    #s2-c2 { left: 500px; }
+    #s2-c3 { left: 840px; z-index: 5; }
+    #s2-c4 { left: 1180px; }
+    #s2-c5 { left: 1520px; }
+    #s2-badge {
+      position: absolute;
+      left: 24px;
+      top: -34px;
+      height: 68px;
+      padding: 0 26px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--ground);
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 32px;
+      line-height: 68px;
+      white-space: nowrap;
+    }
+  </style>
+  <div data-hf-id="hf-u16y" id="root" data-composition-id="s2" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-yonh" id="s2-t1" class="s2-title">
+      <span data-hf-id="hf-yir5" class="w">Time</span><span data-hf-id="hf-fj2o" class="w">is</span><span data-hf-id="hf-ttnc" class="w">information.</span>
+    </div>
+    <div data-hf-id="hf-2mri" id="s2-t2" class="s2-title">
+      <span data-hf-id="hf-kgzl" class="w">Recency</span><span data-hf-id="hf-h2zp" class="w x">×</span><span data-hf-id="hf-ldtl" class="w">Intensity</span>
+    </div>
+    <div data-hf-id="hf-2c3s" id="s2-c1" class="s2-card"><div data-hf-id="hf-w62n" class="d">5 weeks ago</div><div data-hf-id="hf-5wp4" class="bar" style="width:80%"></div><div data-hf-id="hf-0ory" class="bar" style="width:60%"></div><div data-hf-id="hf-fmjr" class="bar" style="width:70%"></div></div>
+    <div data-hf-id="hf-d7lf" id="s2-c2" class="s2-card"><div data-hf-id="hf-vbyw" class="d">4 weeks ago</div><div data-hf-id="hf-yzrb" class="bar" style="width:70%"></div><div data-hf-id="hf-l64b" class="bar" style="width:85%"></div><div data-hf-id="hf-mxju" class="bar" style="width:55%"></div></div>
+    <div data-hf-id="hf-rpa9" id="s2-c3" class="s2-card" data-layout-allow-overflow><div data-hf-id="hf-j00d" class="d">3 weeks ago</div><div data-hf-id="hf-9s0p" class="bar" style="width:90%"></div><div data-hf-id="hf-qwyk" class="bar" style="width:75%"></div><div data-hf-id="hf-qzb4" class="bar" style="width:80%"></div><div data-hf-id="hf-p1jx" id="s2-badge">4 h · 60 turns</div></div>
+    <div data-hf-id="hf-qhrp" id="s2-c4" class="s2-card"><div data-hf-id="hf-bbfk" class="d">yesterday</div><div data-hf-id="hf-gtyp" class="bar" style="width:65%"></div><div data-hf-id="hf-8jrp" class="bar" style="width:50%"></div><div data-hf-id="hf-ylga" class="bar" style="width:70%"></div></div>
+    <div data-hf-id="hf-pq3w" id="s2-c5" class="s2-card"><div data-hf-id="hf-ze2l" class="d">today</div><div data-hf-id="hf-uhck" class="bar" style="width:75%"></div><div data-hf-id="hf-7upw" class="bar" style="width:40%"></div><div data-hf-id="hf-s67m" class="bar" style="width:60%"></div></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const cards = ["#s2-c1", "#s2-c2", "#s2-c3", "#s2-c4", "#s2-c5"];
+      const rot = [-5, 3, -2, 4, -3];
+
+      gsap.set("#s2-t2 .w", { opacity: 0 });
+      gsap.set("#s2-badge", { opacity: 0, scale: 0.6, transformOrigin: "left center" });
+
+      tl.fromTo("#s2-t1 .w", { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 0.15);
+
+      cards.forEach((c, i) => {
+        tl.fromTo(c, { opacity: 0, y: 120, rotation: rot[i], transformOrigin: "center" },
+          { opacity: 1, y: 0, rotation: rot[i], duration: 0.5, ease: "expo.out" }, 0.5 + i * 0.08);
+      });
+
+      // "Old context should fade": the two oldest sink and dim. The third is the exception.
+      tl.to(["#s2-c1", "#s2-c2"], { y: 60, opacity: 0.25, duration: 0.5, ease: "power2.inOut", stagger: 0.06 }, 2.6);
+
+      // "Unless it mattered": the badge pops and the card rises above the fresh ones.
+      tl.fromTo("#s2-badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, 4.0);
+      tl.to("#s2-c3", { y: -140, scale: 1.15, rotation: 0, duration: 0.5, ease: "expo.out" }, 4.15);
+
+      // Title swap on one stage.
+      tl.to("#s2-t1 .w", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in", stagger: 0.04 }, 5.4);
+      tl.fromTo("#s2-t2 .w", { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 5.75);
+
+      // Hand-off: the card becomes the next world; everything else blurs away.
+      tl.to(["#s2-c1", "#s2-c2", "#s2-c4", "#s2-c5", "#s2-t2", "#s2-badge"],
+        { opacity: 0, filter: "blur(15px)", duration: 0.3, ease: "power2.in" }, 7.3);
+      tl.to("#s2-c3", { scale: 9, y: -300, borderRadius: 0, duration: 0.65, ease: "power2.inOut" }, 7.3);
+      tl.to("#s2-c3 .bar, #s2-c3 .d", { opacity: 0, duration: 0.25, ease: "power2.in" }, 7.45);
+
+      window.__timelines["s2"] = tl;
+    })();
+  </script>
+</template>
