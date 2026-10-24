@@ -1,0 +1,46 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; --ink: #15140f; --accent: #e8491d; font-family: Inter, sans-serif; overflow: hidden; }
+    .stage { position: absolute; inset: 0; perspective: 1800px; perspective-origin: 50% 60%; }
+    #s4-tag {
+      position: absolute; left: 90px; top: 300px; width: 920px;
+      font-family: Outfit, sans-serif; font-weight: 700; font-size: 104px; letter-spacing: -0.03em; line-height: 1.06; color: #f3f1ec;
+    }
+    #s4-tag .w { display: inline-block; margin-right: 0.24em; }
+    #s4-tag .feel { color: var(--accent); }
+    #s4-card {
+      position: absolute; left: 90px; top: 840px; width: 900px; height: 360px; padding: 44px 50px;
+      transform-style: preserve-3d; background: rgba(255,255,255,0.94); border-radius: 36px;
+      box-shadow: 0 14px 0 #cdbcb0, 0 44px 90px rgba(0,0,0,0.45), inset 0 2px 0 rgba(255,255,255,0.95);
+    }
+    #s4-mark { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 70px; letter-spacing: -0.02em; color: var(--ink); }
+    #s4-claim { margin-top: 18px; font-size: 38px; font-weight: 500; color: var(--ink); opacity: 0.7; }
+    #s4-cta { margin-top: 26px; font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 34px; color: var(--accent); }
+  </style>
+  <div data-hf-id="hf-q5j8" id="root" data-composition-id="s4" data-width="1080" data-height="1920">
+    <div data-hf-id="hf-cuyf" id="s4-tag">
+      <div data-hf-id="hf-f1ko" id="s4-l1"><span data-hf-id="hf-ehbp" class="w">It</span><span data-hf-id="hf-5oju" class="w">can</span><span data-hf-id="hf-3lsc" class="w">read</span><br data-hf-id="hf-x5px" /><span data-hf-id="hf-9o0j" class="w">the</span><span data-hf-id="hf-xc9s" class="w">clock.</span></div>
+      <div data-hf-id="hf-npgj" id="s4-l2"><span data-hf-id="hf-os4p" class="w">It</span><span data-hf-id="hf-jjtl" class="w">can't</span><span data-hf-id="hf-bhm0" class="w feel">feel</span><br data-hf-id="hf-rsrt" /><span data-hf-id="hf-cto3" class="w">the</span><span data-hf-id="hf-g5gt" class="w">time.</span></div>
+    </div>
+    <div data-hf-id="hf-tan6" class="stage">
+      <div data-hf-id="hf-dm8r" id="s4-card">
+        
+        <div data-hf-id="hf-nle0" id="s4-mark">sense-of-time</div>
+        <div data-hf-id="hf-3yol" id="s4-claim">Stores when. Never what.</div>
+        <div data-hf-id="hf-vu6v" id="s4-cta">Coming soon to GitHub &amp; MCP</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      gsap.set("#s4-card", { opacity: 0 });
+      tl.fromTo("#s4-l1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 0.15);
+      tl.fromTo("#s4-l2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 1.0);
+      // The glass card rises from depth and settles into its tilt.
+      tl.fromTo("#s4-card", { opacity: 0, y: 120, z: -400, rotationX: 18, rotationY: -22 },
+        { opacity: 1, y: 0, z: 0, rotationX: 8, rotationY: -12, duration: 0.7, ease: "expo.out" }, 2.6);
+      window.__timelines["s4"] = tl;
+    })();
+  </script>
+</template>

@@ -1,0 +1,70 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; --ink: #15140f; --accent: #e8491d; font-family: Inter, sans-serif; overflow: hidden; }
+    .stage { position: absolute; inset: 0; perspective: 1800px; perspective-origin: 50% 40%; }
+    .card {
+      position: absolute; left: 200px; top: 760px; width: 620px; height: 330px; padding: 34px 40px;
+      transform-style: preserve-3d; background: rgba(255,255,255,0.92); border-radius: 36px;
+      box-shadow: 0 14px 0 #d9c6ba, 0 44px 80px rgba(90,30,10,0.3), inset 0 2px 0 rgba(255,255,255,0.95);
+    }
+    .card .d { font-family: "JetBrains Mono", monospace; font-size: 34px; font-weight: 600; color: var(--ink); opacity: 0.6; margin-bottom: 30px; white-space: nowrap; }
+    .card .bar { height: 22px; border-radius: 11px; background: #e3ddd4; margin-bottom: 20px; }
+    #s2-badge {
+      position: absolute; left: 30px; top: -40px; height: 80px; padding: 0 30px; border-radius: 999px;
+      background: var(--accent); color: #fff; font-family: "JetBrains Mono", monospace; font-weight: 600;
+      font-size: 36px; line-height: 80px; white-space: nowrap; box-shadow: 0 14px 30px rgba(232,73,29,0.35);
+    }
+    .head {
+      position: absolute; left: 90px; top: 1100px; width: 920px;
+      font-family: Outfit, sans-serif; font-weight: 700; font-size: 100px; letter-spacing: -0.03em; line-height: 1.05;
+      color: #fff; text-shadow: 0 10px 40px rgba(110,35,10,0.35);
+    }
+    .head .w { display: inline-block; margin-right: 0.24em; }
+    .head .x { color: var(--ink); }
+  </style>
+  <div data-hf-id="hf-bmd6" id="root" data-composition-id="s2" data-width="1080" data-height="1920">
+    <div data-hf-id="hf-tan6" class="stage">
+      <div data-hf-id="hf-ow6o" id="s2-c5" class="card"><div data-hf-id="hf-w62n" class="d">5 weeks ago</div><div data-hf-id="hf-5wp4" class="bar" style="width:80%"></div><div data-hf-id="hf-0ory" class="bar" style="width:60%"></div><div data-hf-id="hf-fmjr" class="bar" style="width:70%"></div></div>
+      <div data-hf-id="hf-pnuh" id="s2-c4" class="card"><div data-hf-id="hf-vbyw" class="d">4 weeks ago</div><div data-hf-id="hf-yzrb" class="bar" style="width:70%"></div><div data-hf-id="hf-l64b" class="bar" style="width:85%"></div><div data-hf-id="hf-mxju" class="bar" style="width:55%"></div></div>
+      <div data-hf-id="hf-3b59" id="s2-c3" class="card" data-layout-allow-overflow><div data-hf-id="hf-j00d" class="d">3 weeks ago</div><div data-hf-id="hf-9s0p" class="bar" style="width:90%"></div><div data-hf-id="hf-qwyk" class="bar" style="width:75%"></div><div data-hf-id="hf-qzb4" class="bar" style="width:80%"></div><div data-hf-id="hf-p1jx" id="s2-badge">4 h · 60 turns</div></div>
+      <div data-hf-id="hf-ky2n" id="s2-c2" class="card"><div data-hf-id="hf-bbfk" class="d">yesterday</div><div data-hf-id="hf-gtyp" class="bar" style="width:65%"></div><div data-hf-id="hf-8jrp" class="bar" style="width:50%"></div><div data-hf-id="hf-ylga" class="bar" style="width:70%"></div></div>
+      <div data-hf-id="hf-a2l0" id="s2-c1" class="card"><div data-hf-id="hf-ze2l" class="d">today</div><div data-hf-id="hf-uhck" class="bar" style="width:75%"></div><div data-hf-id="hf-7upw" class="bar" style="width:40%"></div><div data-hf-id="hf-s67m" class="bar" style="width:60%"></div></div>
+    </div>
+    <div data-hf-id="hf-uled" id="s2-t1" class="head"><span data-hf-id="hf-yir5" class="w">Time</span><span data-hf-id="hf-fj2o" class="w">is</span><br data-hf-id="hf-x5px" /><span data-hf-id="hf-ttnc" class="w">information.</span></div>
+    <div data-hf-id="hf-yjie" id="s2-t2" class="head"><span data-hf-id="hf-kgzl" class="w">Recency</span><span data-hf-id="hf-h2zp" class="w x">×</span><br data-hf-id="hf-rsrt" /><span data-hf-id="hf-ldtl" class="w">Intensity</span></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // Nearest first: today, yesterday, 3 weeks ago (hero), 4 weeks, 5 weeks. Farther = higher, deeper, softer.
+      const cards = ["#s2-c1", "#s2-c2", "#s2-c3", "#s2-c4", "#s2-c5"];
+      const rest = (i) => ({ x: i * 30, y: -i * 150, z: -i * 210, rotationX: 10, rotationY: -14, filter: `blur(${i >= 2 ? (i - 1) * 1.6 : 0}px)` });
+
+      gsap.set("#s2-t2 .w", { opacity: 0 });
+      gsap.set("#s2-badge", { opacity: 0, scale: 0.6, transformOrigin: "left center" });
+
+      tl.fromTo("#s2-t1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 0.15);
+      cards.forEach((c, i) => {
+        const r = rest(i);
+        tl.fromTo(c, { ...r, z: r.z - 500, rotationY: -34, opacity: 0 }, { ...r, opacity: 1, duration: 0.55, ease: "expo.out" }, 0.4 + i * 0.09);
+      });
+
+      // "Old context should fade": the two farthest soften and sink.
+      tl.to(["#s2-c4", "#s2-c5"], { y: "+=60", opacity: 0.3, filter: "blur(8px)", duration: 0.5, ease: "power2.inOut", stagger: 0.06 }, 2.6);
+
+      // "Unless it mattered": the third card flies to the front, badge pops.
+      tl.to("#s2-c3", { x: 0, y: -40, z: 200, rotationY: -8, rotationX: 8, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 4.0);
+      tl.to(["#s2-c1", "#s2-c2"], { opacity: 0.4, filter: "blur(4px)", duration: 0.5, ease: "power2.inOut" }, 4.0);
+      tl.fromTo("#s2-badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, 4.35);
+
+      tl.to("#s2-t1 .w", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in", stagger: 0.04 }, 5.4);
+      tl.fromTo("#s2-t2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 5.75);
+
+      // Hand-off: the hero card grows past the frame.
+      tl.to(["#s2-c1", "#s2-c2", "#s2-c4", "#s2-c5", "#s2-t2", "#s2-badge"], { opacity: 0, filter: "blur(14px)", duration: 0.3, ease: "power2.in" }, 7.3);
+      tl.to("#s2-c3", { scale: 6, z: 300, rotationX: 0, rotationY: 0, filter: "blur(14px)", opacity: 0, duration: 0.65, ease: "power3.in" }, 7.3);
+
+      window.__timelines["s2"] = tl;
+    })();
+  </script>
+</template>
