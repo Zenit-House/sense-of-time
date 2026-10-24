@@ -6,3 +6,4 @@ video/launch/.thumbnails/
 video/vertical/.hyperframes/
 video/vertical/.thumbnails/
 video/vertical/node_modules/
+video/**/*.mp4
