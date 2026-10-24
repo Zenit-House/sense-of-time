@@ -20,7 +20,7 @@ DATA_DIR = Path(os.environ.get("SOT_DIR", Path.home() / ".sense-of-time"))
 EVENTS = DATA_DIR / "events.jsonl"
 SESSION_GAP = timedelta(minutes=30)
 STRETCH_TIERS = (10, 6, 3)  # hours of continuous activity, each mentioned once
-DAY_SHIFT = timedelta(hours=4)
+WAKE_HOUR = 3  # a gap of 3 h+ that spans this hour counts as a night's sleep
 RETENTION = timedelta(days=90)
 
 DAYPARTS = [(3, 5, "pre_dawn"), (5, 10, "morning"), (10, 15, "midday"),
@@ -126,9 +126,13 @@ def compute(events, now, session_id, char_count):
     # Absence: what kind of opener the gap since the previous message calls for.
     if prev and b != "continuing":
         last = prev["_ts"].astimezone(tz)
-        # A human day turns over at 04:00: 01:00 belongs to the evening before.
-        new_day = last.date() != now.date() or (last - DAY_SHIFT).date() != (now - DAY_SHIFT).date()
         hrs = gap.total_seconds() / 3600
+        # "New day" means they slept: a gap of 3 h+ that spans WAKE_HOUR, whatever the calendar says.
+        wake = now.replace(hour=WAKE_HOUR, minute=0, second=0, microsecond=0)
+        if wake > now:
+            wake -= timedelta(days=1)
+        crossed_midnight = last.date() != now.date()
+        new_day = (hrs >= 3 and last < wake) or (crossed_midnight and hrs >= 6)
         where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new session"
         back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
                 f"{daypart(last.hour).replace('_', ' ')}")
@@ -140,9 +144,9 @@ def compute(events, now, session_id, char_count):
             block.append(e)
             cursor = e["_ts"]
         block_txt = f"that block ran {fmt_gap(prev['_ts'] - cursor)} over {len(block)} messages"
-        if new_day and hrs >= 6:
+        if new_day:
             notes.append(f"{back} ({block_txt}), on a new day; a greeting and a short recap of where things left off is appropriate.")
-        elif new_day and hrs >= 3:
+        elif crossed_midnight and hrs >= 3:
             notes.append(back + ", past midnight since; a greeting and a check whether they want to continue is appropriate.")
         elif hrs >= 6:
             notes.append(f"{back} ({block_txt}); it is now {dp.replace('_', ' ')}. One sentence bridging then to now "
@@ -242,9 +246,13 @@ def selftest():
     assert "check whether they want to continue" in s and "morning is near" in s
     st, s = compute([ev(at(19))], two_am, "s1", 10)
     assert "new day" in s and "recap" in s
-    # 01:09 then 12:42 the same calendar day: slept in between, so a new day.
-    st, s = compute([ev(at(1, 9, day=24))], at(12, 42, day=24), "s1", 10)
-    assert "new day" in s and "recap" in s
+    # Sleep gaps are a new day whatever the calendar says: 01:09 -> 12:42, 02:00 -> 06:00, 22:00 -> 03:00.
+    for last_dt, now_dt in [(at(1, 9, day=24), at(12, 42, day=24)), (at(2, day=24), at(6, day=24)), (at(22), at(3, day=24))]:
+        st, s = compute([ev(last_dt)], now_dt, "s1", 10)
+        assert "new day" in s and "recap" in s, (last_dt, now_dt)
+    # 22:00 -> 01:30 crossed midnight but no sleep: check whether they want to continue.
+    st, s = compute([ev(at(22))], at(1, 30, day=24), "s1", 10)
+    assert "check whether they want to continue" in s and "new day" not in s
     st, s = compute([ev(at(19), tier=0), ev(at(2, 10, day=24))], at(2, 30, day=24), "s1", 10)
     assert "morning is near" not in s, "small-hours reminder fires once per night"
 
