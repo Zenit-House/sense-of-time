@@ -1,11 +1,17 @@
 # sense-of-time
 
-A spike that gives Claude Code a sense of time with its user: what time it is,
-how long you were away, and how deep the current session is. It stores only
-timestamps, never message content.
+**It can read the clock. It can't feel the time.**
 
-This is the test build. It runs as a Claude Code `UserPromptSubmit` hook on your
-own machine. It does not work in claude.ai chat or in Claude Code cloud sessions.
+An LLM knows what time it is, but a three-second pause and a three-week pause
+look identical to it: the next line of the transcript. sense-of-time gives a
+Claude Code session a sense of time with its user: how long you were away,
+which block of today's work you are in, when a greeting or a recap is due and
+when silence is. It stores only timestamps, never message content.
+
+**Status: early and changing daily.** Today it is a Claude Code
+`UserPromptSubmit` hook plus a desktop band mod, both on your own machine. It
+does not run in claude.ai chat or in Claude Code cloud sessions. An MCP server
+for other hosts is planned. MIT licensed.
 
 ## Install
 
