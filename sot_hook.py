@@ -133,24 +133,39 @@ def compute(events, now, session_id, char_count):
             wake -= timedelta(days=1)
         crossed_midnight = last.date() != now.date()
         new_day = (hrs >= 3 and last < wake) or (crossed_midnight and hrs >= 6)
-        where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new session"
+        where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new chat"
         back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
                 f"{daypart(last.hour).replace('_', ' ')}")
-        # The block of work they left: trailing run ending at prev.
-        block, cursor = [prev], prev["_ts"]
+        # The work they left: the previous day = events back from prev with no sleep-length gap (6 h+).
+        day, cursor = [prev], prev["_ts"]
         for e in reversed(events[:-1]):
-            if cursor - e["_ts"] >= SESSION_GAP:
+            if cursor - e["_ts"] >= timedelta(hours=6):
                 break
-            block.append(e)
+            day.append(e)
             cursor = e["_ts"]
-        block_txt = f"that block ran {fmt_gap(prev['_ts'] - cursor)} over {len(block)} messages"
+        # Only this chat's part of that day can be recapped: its hook lines are the time markers in the transcript.
+        mine = [e for e in day if e["session_id"] == session_id]
+        marker = lambda t: f"It is {t.astimezone(tz).strftime('%A %H:%M')}"
+        if mine:
+            window = (f"between the markers '{marker(mine[-1]['_ts'])}' and '{marker(mine[0]['_ts'])}' "
+                      f"in this conversation ({len(mine)} messages)")
+            recap = (f"then recap only what happened {window}: what got done and what was left unresolved, "
+                     "and ignore everything before that window")
+        else:
+            recap = ("this chat has no history of that work, so do not invent a recap; offer to pick up "
+                     "from where they left off if they point you at it")
+        # shortcut: a prompt of 40+ characters counts as a task, tune if greeting-only messages misfire
+        close = ("Their message already carries a task: close the opener with a short 'let's continue' and go straight to it."
+                 if char_count >= 40 else "Their message is short: close the opener by asking what to pick up first.")
+        greet = f"Open with a {dp.replace('_', ' ')} greeting in the user's language and register"
         if new_day:
-            notes.append(f"{back} ({block_txt}), on a new day; a greeting and a short recap of where things left off is appropriate.")
+            notes.append(f"{back}, on a new day. {greet}, two or three sentences: name the gap, {recap}. {close}")
         elif crossed_midnight and hrs >= 3:
-            notes.append(back + ", past midnight since; a greeting and a check whether they want to continue is appropriate.")
+            notes.append(f"{back}, past midnight since. {greet}, then a check whether they want to continue. {close}")
         elif hrs >= 6:
-            notes.append(f"{back} ({block_txt}); it is now {dp.replace('_', ' ')}. One sentence bridging then to now "
-                         "and pointing at where things left off is appropriate, with no greeting ceremony.")
+            notes.append(f"{back}; it is now {dp.replace('_', ' ')}. One sentence bridging then to now"
+                         + (f", pointing at the last unresolved thing {window}" if mine else "")
+                         + f", with no greeting ceremony. {close}")
         elif hrs >= 1:
             notes.append(back + "; a brief welcome back and readiness to continue is appropriate.")
         else:
@@ -231,13 +246,21 @@ def selftest():
     st, s = one(timedelta(minutes=40));  assert st["notes"] == 1 and "light greeting" in s and "resuming" in s
     assert "first sentence of the reply" in s
     st, s = one(timedelta(hours=2));     assert "welcome back" in s
-    st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "over 1 messages" in s
-    morning_block = [ev(at(9)), ev(at(9, 20)), ev(at(9, 45)), ev(at(11))]  # 11:00 starts a new block
-    st, s = compute(morning_block, base, "s1", 10)
-    assert "that block ran 0m over 1 messages" in s and "now evening" in s
-    st, s = compute(morning_block[:3], base, "s1", 10)
-    assert "that block ran 45m over 3 messages" in s
-    st, s = one(timedelta(hours=2), sid="old"); assert "new session" in s
+    st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "(1 messages)" in s
+    # The recap window is the previous day's work in this chat, named by the hook's own transcript markers.
+    morning = [ev(at(9)), ev(at(9, 20)), ev(at(9, 45)), ev(at(11)), ev(at(11, 30), sid="other")]
+    st, s = compute(morning, base, "s1", 10)
+    assert "'It is Friday 09:00' and 'It is Friday 11:00' in this conversation (4 messages)" in s and "now evening" in s
+    st, s = compute(morning, base, "s9", 10)
+    assert "between the markers" not in s and "bridging" in s, "another chat gets no pointer into this transcript"
+    st, s = one(timedelta(hours=2), sid="old"); assert "new chat" in s
+    # Day-after openers: greeting by daypart, recap window, and a close that depends on the message.
+    st, s = compute([ev(at(22))], at(9, day=24), "s1", 10)
+    assert "morning greeting" in s and "between the markers 'It is Friday 22:00' and 'It is Friday 22:00'" in s and "asking what to pick up" in s
+    st, s = compute([ev(at(22))], at(9, day=24), "s1", 120)
+    assert "let's continue" in s
+    st, s = compute([ev(at(22), sid="old")], at(9, day=24), "s1", 10)
+    assert "do not invent a recap" in s
     # Absence tiers across midnight (now 02:00 Saturday, also first message in the small hours).
     two_am = at(2, day=24)
     st, s = compute([ev(at(0, 30, day=24))], two_am, "s1", 10)
