@@ -178,9 +178,13 @@ def compute(events, now, session_id, char_count):
                          + (f", pointing at the last unresolved thing {window}" if mine else "")
                          + f", with no greeting ceremony. {close}")
         elif hrs >= 1:
-            notes.append(back + "; a brief welcome back and readiness to continue is appropriate.")
+            notes.append(back + ". Open with one full sentence of welcome back that names the break and offers to pick up "
+                         "(like 'back from the break? let's pick it up'), in the user's register, worded differently from "
+                         "every earlier opener in this conversation.")
         else:
-            notes.append(back + "; a light greeting phrase is appropriate.")
+            notes.append(back + ". Open with one short, light greeting sentence that acknowledges the pause and moves on "
+                         "(like 'short break done? let's continue'), in the user's register, worded differently from "
+                         "every earlier opener in this conversation.")
     # A new block of this chat today (first message, or a gap of 30 min+): a visible chapter, numbered within the day.
     chat = [e["_ts"] for e in events if e["session_id"] == session_id]
     todays = [t for t in chat if t.astimezone(tz).date() == now.date()]
@@ -218,7 +222,7 @@ def compute(events, now, session_id, char_count):
         sess_txt += f", messages {length_trend}"
     parts.append(sess_txt + ".")
     parts.append(f"Guidance: tone {', '.join(tone) or 'neutral'}, depth {depth}.")
-    parts.append(" ".join(notes) + " It belongs in the first sentence of the reply, before the answer, never at the end."
+    parts.append(" ".join(notes) + " The opener is the reply's own first paragraph: one line, then a blank line, then the answer; never at the end."
                  if notes else "Time context shapes tone only and is not mentioned unless the user asks.")
 
     state = {"daypart": dp, "bucket": b, "turns": turns, "tempo": tempo, "length_trend": length_trend,
@@ -283,7 +287,7 @@ def selftest():
     # Absence tiers, same day.
     one = lambda gap, **kw: compute([ev(base - gap, **kw)], base, "s1", 10)
     st, s = one(timedelta(minutes=40));  assert st["notes"] == 2 and "light greeting" in s and "resuming" in s and "block 2" in s
-    assert "first sentence of the reply" in s
+    assert "own first paragraph" in s and "worded differently" in s
     st, s = one(timedelta(hours=2));     assert "welcome back" in s
     st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "(1 messages)" in s
     # The recap window is the previous day's work in this chat, named by the hook's own transcript markers.
