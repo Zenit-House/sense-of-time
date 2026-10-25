@@ -11,7 +11,7 @@ const band = atom({ plugin: 'sense-of-time-band', key: 'band' } as const, null)
 const isHidden = atom({ plugin: 'sense-of-time-band', key: 'isHidden' } as const, false)
 
 const GAP_MS = 30 * 60 * 1000
-const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const hhmm = (t: number) => {
   const d = new Date(t)
@@ -20,9 +20,9 @@ const hhmm = (t: number) => {
 
 const ago = (ms: number) => {
   const m = Math.floor(ms / 60000)
-  if (m < 1) return 'baru saja'
-  if (m < 60) return `${m}m`
-  return `${Math.floor(m / 60)}j ${m % 60}m`
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  return `${Math.floor(m / 60)}h ${m % 60}m ago`
 }
 
 async function refresh($: any) {
@@ -76,10 +76,16 @@ export const register: Register = on => {
   let tick: { cancel(): void } | undefined
 
   on('session.start', async ($, e, next) => {
+    await $.command.register({ name: 'sot-band', description: 'Show or hide the sense-of-time band' })
     await refresh($)
     tick?.cancel()
     tick = $.clock.every(30000, () => refresh($))
     return next(e)
+  })
+
+  on('command.run', { command: 'sot-band' }, async $ => {
+    const hidden = await update($, isHidden, v => !v)
+    return { text: hidden ? 'sense-of-time band hidden. /sot-band shows it again.' : 'sense-of-time band shown.' }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -98,9 +104,9 @@ export const register: Register = on => {
     return (
       <Box>
         <Text dimColor>
-          {b.day} · blok {b.block} hari ini · mulai {b.start} · {b.messages} pesan · jeda {b.since}{' '}
+          {b.day} · block {b.block} today · since {b.start} · {b.messages} messages · last {b.since}{' '}
         </Text>
-        <Button key="hide" label="Sembunyikan" onPress={() => update($, isHidden, () => true)} />
+        <Button key="hide" label="Hide (/sot-band to show)" onPress={() => update($, isHidden, () => true)} />
       </Box>
     )
   })
