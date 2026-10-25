@@ -58,6 +58,17 @@ def fmt_gap(td):
     return f"{m}m"
 
 
+def split_blocks(times):
+    """Sorted datetimes -> runs with no gap of SESSION_GAP or more (the same rule the band mod uses)."""
+    blocks = []
+    for t in sorted(times):
+        if blocks and t - blocks[-1][-1] < SESSION_GAP:
+            blocks[-1].append(t)
+        else:
+            blocks.append([t])
+    return blocks
+
+
 def trend(values, up, down):
     """Median of last 5 vs the 5 before. Needs 10 values, else unknown."""
     if len(values) < 10:
@@ -170,6 +181,13 @@ def compute(events, now, session_id, char_count):
             notes.append(back + "; a brief welcome back and readiness to continue is appropriate.")
         else:
             notes.append(back + "; a light greeting phrase is appropriate.")
+    # A new block of this chat today (first message, or a gap of 30 min+): a visible chapter, numbered within the day.
+    chat = [e["_ts"] for e in events if e["session_id"] == session_id]
+    todays = [t for t in chat if t.astimezone(tz).date() == now.date()]
+    if chat and (not todays or now - todays[-1] >= SESSION_GAP):
+        title = f"{now.strftime('%A %H:%M')} · block {len(split_blocks(todays)) + 1}"
+        notes.append(f"This message starts a new block of today's work in this chat. Before answering, mark a chapter titled "
+                     f"'{title}' if a chapter tool exists; otherwise open the reply with the line '── {title} ──'.")
     # Stretch: continuous activity across chats, each tier mentioned once.
     tier = next((t for t in STRETCH_TIERS if stretch_dur > timedelta(hours=t)), 0)
     tier_said = max((e.get("tier", 0) for e in stretch), default=0)
@@ -224,6 +242,19 @@ def main():
                                              "additionalContext": summary}}))
 
 
+def today():
+    """Print today's blocks of work, per chat: the map the band mod draws, on demand."""
+    now = datetime.now().astimezone()
+    by_chat = {}
+    for e in load_events(now):
+        if e["_ts"].astimezone(now.tzinfo).date() == now.date():
+            by_chat.setdefault(e["session_id"], []).append(e["_ts"])
+    rows = sorted((blk[0], blk[-1], len(blk), sid[:8]) for sid, ts in by_chat.items() for blk in split_blocks(ts))
+    print(now.strftime("%A %Y-%m-%d"))
+    for a, z, n, sid in rows:
+        print(f"  {a.astimezone(now.tzinfo):%H:%M}-{z.astimezone(now.tzinfo):%H:%M}  {n:>3} messages  chat {sid}")
+
+
 def selftest():
     tz = datetime.now().astimezone().tzinfo
     base = datetime(2026, 10, 23, 21, 34, tzinfo=tz)  # Friday evening
@@ -233,6 +264,14 @@ def selftest():
     assert daypart(2) == "late_night" and daypart(3) == "pre_dawn" and daypart(21) == "evening"
     assert bucket(None) == "first" and bucket(timedelta(minutes=29)) == "continuing"
     assert fmt_gap(timedelta(hours=12, minutes=38)) == "12h 38m"
+    assert [len(b) for b in split_blocks([at(9), at(9, 5), at(9, 40), at(13)])] == [2, 1, 1]
+    # Chapter: a 30 min+ gap in this chat starts block 2 of today; a continuing message does not.
+    st, s = compute([ev(at(9)), ev(at(9, 5))], at(9, 40), "s1", 10)
+    assert "mark a chapter titled 'Friday 09:40 · block 2'" in s
+    st, s = compute([ev(at(9)), ev(at(9, 5))], at(9, 20), "s1", 10)
+    assert "chapter" not in s
+    st, s = compute([ev(at(9), sid="other")], at(9, 40), "s1", 10)
+    assert "chapter" not in s, "a brand-new chat gets no chapter on its first message"
 
     st, s = compute([], base, "s1", 10)
     assert st["bucket"] == "first" and st["turns"] == 1 and "Friday" in s and not st["should_mention"]
@@ -243,7 +282,7 @@ def selftest():
 
     # Absence tiers, same day.
     one = lambda gap, **kw: compute([ev(base - gap, **kw)], base, "s1", 10)
-    st, s = one(timedelta(minutes=40));  assert st["notes"] == 1 and "light greeting" in s and "resuming" in s
+    st, s = one(timedelta(minutes=40));  assert st["notes"] == 2 and "light greeting" in s and "resuming" in s and "block 2" in s
     assert "first sentence of the reply" in s
     st, s = one(timedelta(hours=2));     assert "welcome back" in s
     st, s = one(timedelta(hours=7));     assert "bridging then to now" in s and "(1 messages)" in s
@@ -264,7 +303,7 @@ def selftest():
     # Absence tiers across midnight (now 02:00 Saturday, also first message in the small hours).
     two_am = at(2, day=24)
     st, s = compute([ev(at(0, 30, day=24))], two_am, "s1", 10)
-    assert "welcome back" in s and "morning is near" in s and st["notes"] == 2
+    assert "welcome back" in s and "morning is near" in s and st["notes"] == 3
     st, s = compute([ev(at(22))], two_am, "s1", 10)
     assert "check whether they want to continue" in s and "morning is near" in s
     st, s = compute([ev(at(19))], two_am, "s1", 10)
@@ -299,7 +338,7 @@ def selftest():
     st, s = compute([ev(at(0, 30, day=24))], at(5, day=24), "s1", 10)
     assert "very early hour" not in s, "no early greeting after activity since midnight"
     st, s = compute([ev(at(23, 50))], at(0, 5, day=24), "s1", 10)
-    assert st["notes"] == 1 and "past midnight" in s
+    assert st["notes"] == 2 and "past midnight" in s and "block 1" in s  # the midnight reminder plus the new day's first block
     st, s = compute([ev(at(23, 50)), ev(at(0, 5, day=24))], at(0, 20, day=24), "s1", 10)
     assert not st["should_mention"], "midnight reminder fires once"
 
@@ -318,6 +357,8 @@ def selftest():
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
+    elif "--today" in sys.argv:
+        today()
     else:
         try:
             main()

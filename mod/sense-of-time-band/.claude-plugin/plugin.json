@@ -1,0 +1,6 @@
+{
+  "name": "sense-of-time-band",
+  "version": "0.1.0",
+  "description": "A band above the prompt: today's date, which block of work this chat is in, when it started, and how long since your last message.",
+  "types": "./types/index.d.ts"
+}
