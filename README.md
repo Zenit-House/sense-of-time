@@ -1,6 +1,6 @@
 # sense-of-time
 
-**It can read the clock. It can't feel the time.**
+**Your AI knows the time. But it can't FEEL the time.**
 
 An LLM knows what time it is, but a three-second pause and a three-week pause
 look identical to it: the next line of the transcript. sense-of-time gives a

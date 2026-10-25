@@ -4,7 +4,7 @@ Length: 30 s. Narration and on-screen text in English.
 Motion graphic only: typography, shapes, chat bubbles.
 Audio from ElevenLabs only; no generated images or video.
 
-Tagline: **It can read the clock. It can't feel the time.**
+Tagline: **Your AI knows the time. But it can't FEEL the time.**
 
 ## 1. The problem (0–9 s)
 
@@ -47,7 +47,7 @@ VO:
 > Sense of Time. It stores when. Never what. Coming soon to GitHub and MCP.
 
 Screen:
-- Tagline, full frame: `It can read the clock. It can't feel the time.`
+- Tagline, full frame: `Your AI knows the time. But it can't FEEL the time.`
 - Wordmark: `sense-of-time`
 - `Stores when. Never what.`
 - `Coming soon to GitHub & MCP`
