@@ -134,6 +134,24 @@ def compute(events, now, session_id, char_count):
         depth = "light"
 
     notes = []
+    marker = lambda t: f"It is {t.astimezone(tz).strftime('%A %H:%M')}"
+    # This chat's own absence: the user may have just been busy in another chat, yet this project went untouched for days.
+    chat_ev = [e for e in events if e["session_id"] == session_id]
+    chat_note = None
+    if chat_ev and prev["session_id"] != session_id and now - chat_ev[-1]["_ts"] >= timedelta(hours=6):
+        clast = chat_ev[-1]["_ts"]
+        cday, cursor = [chat_ev[-1]], clast
+        for e in reversed(chat_ev[:-1]):
+            if cursor - e["_ts"] >= timedelta(hours=6):
+                break
+            cday.append(e)
+            cursor = e["_ts"]
+        chat_note = (f"This conversation itself was last touched {fmt_gap(now - clast)} ago, "
+                     f"{clast.astimezone(tz).strftime('%A')} {daypart(clast.astimezone(tz).hour).replace('_', ' ')}, "
+                     f"while the user was last active {fmt_gap(gap)} ago in another chat. Greet from their overall activity, "
+                     f"then add a short recap of this conversation's last session only, between the markers "
+                     f"'{marker(cursor)}' and '{marker(clast)}' ({len(cday)} messages): what got done and what was left "
+                     "unresolved, ignoring everything before it.")
     # Absence: what kind of opener the gap since the previous message calls for.
     if prev and b != "continuing":
         last = prev["_ts"].astimezone(tz)
@@ -144,7 +162,8 @@ def compute(events, now, session_id, char_count):
             wake -= timedelta(days=1)
         crossed_midnight = last.date() != now.date()
         new_day = (hrs >= 3 and last < wake) or (crossed_midnight and hrs >= 6)
-        where = "resuming this conversation" if prev["session_id"] == session_id else "starting a new chat"
+        where = ("resuming this conversation" if prev["session_id"] == session_id
+                 else "back in this conversation from another chat" if chat_ev else "starting a new chat")
         back = (f"The user is {where} after {fmt_gap(gap)}, last active {last.strftime('%A')} "
                 f"{daypart(last.hour).replace('_', ' ')}")
         # The work they left: the previous day = events back from prev with no sleep-length gap (6 h+).
@@ -156,8 +175,9 @@ def compute(events, now, session_id, char_count):
             cursor = e["_ts"]
         # Only this chat's part of that day can be recapped: its hook lines are the time markers in the transcript.
         mine = [e for e in day if e["session_id"] == session_id]
-        marker = lambda t: f"It is {t.astimezone(tz).strftime('%A %H:%M')}"
-        if mine:
+        if chat_note:
+            recap = "then the recap of this conversation described below"
+        elif mine:
             window = (f"between the markers '{marker(mine[-1]['_ts'])}' and '{marker(mine[0]['_ts'])}' "
                       f"in this conversation ({len(mine)} messages)")
             recap = (f"then recap only what happened {window}: what got done and what was left unresolved, "
@@ -175,7 +195,7 @@ def compute(events, now, session_id, char_count):
             notes.append(f"{back}, past midnight since. {greet}, then a check whether they want to continue. {close}")
         elif hrs >= 6:
             notes.append(f"{back}; it is now {dp.replace('_', ' ')}. One sentence bridging then to now"
-                         + (f", pointing at the last unresolved thing {window}" if mine else "")
+                         + (f", pointing at the last unresolved thing {window}" if mine and not chat_note else "")
                          + f", with no greeting ceremony. {close}")
         elif hrs >= 1:
             notes.append(back + ". Open with one full sentence of welcome back that names the break and offers to pick up "
@@ -185,6 +205,8 @@ def compute(events, now, session_id, char_count):
             notes.append(back + ". Open with one short, light greeting sentence that acknowledges the pause and moves on "
                          "(like 'short break done? let's continue'), in the user's register, worded differently from "
                          "every earlier opener in this conversation.")
+    if chat_note:
+        notes.append(chat_note)
     # A new block of this chat today (first message, or a gap of 30 min+): a visible chapter, numbered within the day.
     chat = [e["_ts"] for e in events if e["session_id"] == session_id]
     todays = [t for t in chat if t.astimezone(tz).date() == now.date()]
@@ -213,7 +235,7 @@ def compute(events, now, session_id, char_count):
     parts = [f"It is {weekday} {hhmm} ({now.strftime('%z')[:3]}:{now.strftime('%z')[3:]}), {dp.replace('_', ' ')}."]
     if b == "first":
         parts.append("No earlier activity is recorded.")
-    elif b == "continuing":
+    elif b == "continuing" and not chat_note:
         parts.append("The conversation is continuing; no opener is needed.")
     sess_txt = f"This session: turn {turns}, {fmt_gap(duration)}"
     if tempo != "unknown":
@@ -269,6 +291,15 @@ def selftest():
     assert bucket(None) == "first" and bucket(timedelta(minutes=29)) == "continuing"
     assert fmt_gap(timedelta(hours=12, minutes=38)) == "12h 38m"
     assert [len(b) for b in split_blocks([at(9), at(9, 5), at(9, 40), at(13)])] == [2, 1, 1]
+    # Per-chat absence: this chat last touched days ago, the user busy elsewhere 20 min ago -> greet + recap this chat.
+    old = [ev(at(21, day=16)), ev(at(22, day=16)), ev(at(13, day=17))]  # 13:00 next day is a separate later session
+    st, s = compute(old + [ev(base - timedelta(minutes=20), sid="other")], base, "s1", 10)
+    assert "last touched 6d 8h ago" in s and "20m ago in another chat" in s and "no opener is needed" not in s
+    assert "'It is Saturday 13:00' and 'It is Saturday 13:00' (1 messages)" in s
+    st, s = compute(old + [ev(base - timedelta(hours=8), sid="other")], base, "s1", 10)
+    assert "back in this conversation from another chat" in s and "last touched" in s and "no history" not in s
+    st, s = compute([ev(base - timedelta(hours=2)), ev(base - timedelta(minutes=20), sid="other")], base, "s1", 10)
+    assert "last touched" not in s, "a 2 h old chat needs no recap"
     # Chapter: a 30 min+ gap in this chat starts block 2 of today; a continuing message does not.
     st, s = compute([ev(at(9)), ev(at(9, 5))], at(9, 40), "s1", 10)
     assert "mark a chapter titled 'Friday 09:40 · block 2'" in s
@@ -293,7 +324,7 @@ def selftest():
     # The recap window is the previous day's work in this chat, named by the hook's own transcript markers.
     morning = [ev(at(9)), ev(at(9, 20)), ev(at(9, 45)), ev(at(11)), ev(at(11, 30), sid="other")]
     st, s = compute(morning, base, "s1", 10)
-    assert "'It is Friday 09:00' and 'It is Friday 11:00' in this conversation (4 messages)" in s and "now evening" in s
+    assert "'It is Friday 09:00' and 'It is Friday 11:00' (4 messages)" in s and "now evening" in s
     st, s = compute(morning, base, "s9", 10)
     assert "between the markers" not in s and "bridging" in s, "another chat gets no pointer into this transcript"
     st, s = one(timedelta(hours=2), sid="old"); assert "new chat" in s
